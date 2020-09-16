@@ -1,0 +1,40 @@
+language: java
+# the following will skip the installation of dependencies.
+install: true
+
+script:
+  - gradle clean build
+  - tar -zcf hello_world_build.tar.gz build
+  - gradle dist --rerun-tasks
+  - ls -R
+
+
+before_deploy:
+  - git config --global user.email "builds@travis-ci.com"
+  - git config --global user.name "Travis CI"
+  - export GIT_TAG=$TRAVIS_BRANCH.$TRAVIS_BUILD_NUMBER
+  - git tag $GIT_TAG -a -m "Generated tag from TravisCI for build $TRAVIS_BUILD_NUMBER"
+  - git push -q https://$GITPERM@github.com/drlehr/java-hello-world-with-gradle  --tags
+  - ls -R
+  
+deploy:
+  skip_cleanup: true
+  overwrite: true
+  file_glob: true
+  provider: releases
+  api_key: 
+    secure: $GITPERM
+    
+  file:
+    - "README.md"
+    - "build.gradle"
+    - ".travis.yml"
+    - README.md
+    - dist/
+    - hello_world_build.tar.gz
+    - *.gz
+    - *
+  
+  on:
+    tags: false
+    all_branches: true
